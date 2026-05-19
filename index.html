@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>👸 Princesa Alicia — Aventura no Vale!</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap');
+:root{ --pink:#FF69B4; --dpink:#FF1493; --gold:#FFD700; }
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body{
+  background:#0d001a; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; min-height:100vh;
+  font-family:'Nunito',sans-serif; overflow:hidden; user-select:none;
+}
+#wrap{
+  position:relative; width:800px; height:460px;
+  border-radius:22px; overflow:hidden; cursor:crosshair;
+  box-shadow:0 0 0 4px var(--pink),0 0 55px 8px rgba(255,105,180,.45),0 18px 70px rgba(0,0,0,.75);
+}
+canvas{ display:block; width:800px; height:460px; }
+.screen{
+  display:none; position:absolute; inset:0;
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; z-index:50; border-radius:22px;
+}
+.screen.active{ display:flex; }
+#startScreen   { background:radial-gradient(ellipse,rgba(255,200,230,.97),rgba(255,140,195,.97)); }
+#gameoverScreen{ background:radial-gradient(ellipse,rgba(70,0,35,.97),rgba(20,0,15,.97)); }
+#winScreen     { background:radial-gradient(ellipse,rgba(255,235,248,.97),rgba(255,185,225,.97)); }
+.sep{ font-size:68px; animation:bop 1.3s ease-in-out infinite; }
+@keyframes bop{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.stitle{ font-family:'Fredoka One',cursive; font-size:34px; text-align:center; line-height:1.2; text-shadow:3px 3px 0 white,-1px -1px 0 var(--dpink); }
+#startScreen .stitle,#winScreen .stitle{ color:#c0387a; }
+#gameoverScreen .stitle{ color:#FFB6D9; text-shadow:2px 2px 0 #700030; }
+.ssub{ font-size:14px; text-align:center; line-height:1.95; max-width:380px; }
+#startScreen .ssub,#winScreen .ssub{ color:#7a2060; }
+#gameoverScreen .ssub{ color:#FFB6D9; }
+.gbtn{
+  font-family:'Fredoka One',cursive; font-size:21px; padding:13px 48px;
+  background:linear-gradient(135deg,var(--pink),var(--dpink));
+  color:white; border:none; border-radius:50px; cursor:pointer;
+  box-shadow:0 6px 22px rgba(255,20,147,.5); transition:transform .14s;
+}
+.gbtn:hover{ transform:scale(1.07) translateY(-3px); }
+.gbtn:active{ transform:scale(.96); }
+.legrow{ display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+.legitem{ display:flex; align-items:center; gap:5px; font-size:13px; }
+.legdot{ width:12px; height:12px; border-radius:50%; }
+#hud{ display:flex; gap:12px; margin-bottom:10px; }
+.hpill{
+  background:rgba(255,255,255,.12); border:2px solid var(--pink);
+  border-radius:50px; padding:5px 16px; font-family:'Fredoka One',cursive;
+  font-size:15px; color:white; text-shadow:1px 1px 4px rgba(0,0,0,.5);
+  box-shadow:0 2px 10px rgba(255,105,180,.3); min-width:80px; text-align:center;
+}
+#ctrl{ display:flex; gap:14px; margin-top:12px; }
+.cbtn{
+  font-family:'Fredoka One',cursive; font-size:17px; padding:13px 22px;
+  background:rgba(255,255,255,.12); color:white; border:2.5px solid var(--pink);
+  border-radius:50px; cursor:pointer; box-shadow:0 4px 14px rgba(255,105,180,.3); touch-action:none;
+}
+.cbtn:active{ background:rgba(255,105,180,.35); }
+/* Tutorial */
+#tutModal{
+  display:none; position:fixed; inset:0; z-index:200;
+  align-items:center; justify-content:center;
+  background:rgba(0,0,0,.78); backdrop-filter:blur(4px);
+}
+#tutModal.open{ display:flex; }
+#tutBox{
+  background:linear-gradient(145deg,#fff0f8,#ffe0f0);
+  border:3px solid var(--pink); border-radius:24px; padding:28px 32px;
+  max-width:520px; width:92%; max-height:88vh; overflow-y:auto;
+  box-shadow:0 8px 48px rgba(255,20,147,.45); animation:popIn .3s ease;
+}
+@keyframes popIn{ from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+#tutBox h2{ font-family:'Fredoka One',cursive; font-size:24px; color:#c0387a; text-align:center; margin-bottom:12px; text-shadow:2px 2px 0 white; }
+.tut-tabs{ display:flex; gap:10px; justify-content:center; margin-bottom:16px; }
+.tut-tab{ font-family:'Fredoka One',cursive; font-size:14px; padding:6px 22px; border:2.5px solid var(--pink); border-radius:50px; cursor:pointer; background:white; color:#c0387a; transition:all .15s; }
+.tut-tab.active{ background:linear-gradient(135deg,var(--pink),var(--dpink)); color:white; }
+.tut-content{ display:none; }
+.tut-content.show{ display:block; }
+.tut-row{ display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; padding:9px 11px; background:rgba(255,105,180,.08); border-radius:12px; border-left:4px solid var(--pink); }
+.tut-icon{ font-size:26px; flex-shrink:0; line-height:1; }
+.tut-txt{ font-size:13px; color:#5a1a40; line-height:1.6; }
+.tut-txt b{ color:#c0387a; }
+.tut-row.green{ border-left-color:#22c55e; background:rgba(34,197,94,.07); }
+.tut-row.yellow{ border-left-color:#eab308; background:rgba(234,179,8,.07); }
+.tut-row.red{ border-left-color:#ef4444; background:rgba(239,68,68,.07); }
+#btnCloseTut{ display:block; margin:14px auto 0; font-family:'Fredoka One',cursive; font-size:17px; padding:9px 32px; background:linear-gradient(135deg,var(--pink),var(--dpink)); color:white; border:none; border-radius:50px; cursor:pointer; box-shadow:0 4px 16px rgba(255,20,147,.4); transition:transform .14s; }
+#btnCloseTut:hover{ transform:scale(1.05); }
+.tut-btns{ display:flex; gap:10px; justify-content:center; margin-top:4px; }
+.tbtn{ font-family:'Fredoka One',cursive; font-size:14px; padding:7px 20px; background:rgba(255,105,180,.15); border:2px solid var(--pink); border-radius:50px; cursor:pointer; color:#c0387a; transition:background .12s; }
+.tbtn:hover{ background:rgba(255,105,180,.3); }
+@media(max-width:820px){
+  #wrap,canvas{ width:100vw; height:calc(100vw*.575); border-radius:0; }
+  body{ justify-content:flex-start; padding-top:6px; }
+}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="hpill">⭐ <span id="hScore">0</span></div>
+  <div class="hpill">📍 <span id="hDist">0</span>m</div>
+  <div class="hpill" id="hLives">❤️❤️❤️❤️❤️</div>
+  <div class="hpill" id="btnMute" style="cursor:pointer;min-width:50px" title="Música">🔊</div>
+</div>
+
+<div id="wrap">
+  <canvas id="c" width="800" height="460"></canvas>
+
+  <!-- START -->
+  <div class="screen active" id="startScreen">
+    <div class="sep">👸🏻☂️</div>
+    <div class="stitle">Princesa Alicia<br>Aventura no Vale!</div>
+    <div class="ssub">
+      Alicia corre pelo vale e encontra monstros no caminho!<br>
+      <b>⬆ / ESPAÇO</b> Pular &nbsp;|&nbsp; <b>🖱 Clique Esquerdo</b> Atacar<br>
+      Colete ⭐ e ❤️ pelo caminho e chegue ao castelo!
+    </div>
+    <div class="legrow">
+      <div class="legitem"><div class="legdot" style="background:#22c55e"></div><span style="color:#306030">Verde = 1 hit</span></div>
+      <div class="legitem"><div class="legdot" style="background:#eab308"></div><span style="color:#705010">Amarelo = 2 hits</span></div>
+      <div class="legitem"><div class="legdot" style="background:#ef4444"></div><span style="color:#701010">Vermelho = 3 hits</span></div>
+    </div>
+    <button class="gbtn" id="btnStart">🌸 Começar Aventura! 🌸</button>
+    <div class="tut-btns">
+      <button class="tbtn" id="btnTutPT">📖 Tutorial (PT)</button>
+      <button class="tbtn" id="btnTutEN">📖 Tutorial (EN)</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="screen" id="gameoverScreen">
+    <div class="sep">😢</div>
+    <div class="stitle">Fim de Jogo!</div>
+    <div class="ssub" id="goText"></div>
+    <button class="gbtn" id="btnRestart">🔄 Tentar Novamente</button>
+  </div>
+
+  <!-- WIN -->
+  <div class="screen" id="winScreen">
+    <div class="sep">🎉👑🎉</div>
+    <div class="stitle">Vale Conquistado!</div>
+    <div class="ssub" id="winText"></div>
+    <button class="gbtn" id="btnRestart2">🌟 Jogar Novamente</button>
+  </div>
+</div>
+
+<!-- Mobile controls -->
+<div id="ctrl">
+  <button class="cbtn" id="btnJump">⬆️ Pular</button>
+  <button class="cbtn" id="btnAtk">☂️ Atacar</button>
+</div>
+
+<!-- Tutorial Modal -->
+<div id="tutModal">
+  <div id="tutBox">
+    <h2>📖 Tutorial — Princesa Alicia</h2>
+    <div class="tut-tabs">
+      <button class="tut-tab active" onclick="switchLang('pt')">🇧🇷 Português</button>
+      <button class="tut-tab"        onclick="switchLang('en')">🇺🇸 English</button>
+    </div>
+    <div class="tut-content show" id="tut-pt">
+      <div class="tut-row"><div class="tut-icon">👸🏻</div><div class="tut-txt"><b>A Princesa Alicia</b> corre automaticamente para a direita. Ela para quando um monstro bloqueia o caminho — derrote-o para continuar!</div></div>
+      <div class="tut-row"><div class="tut-icon">☂️</div><div class="tut-txt"><b>Atacar:</b> clique com o <b>botão esquerdo do mouse</b>. O guarda-chuva mágico acerta monstros próximos à frente!</div></div>
+      <div class="tut-row"><div class="tut-icon">⬆️</div><div class="tut-txt"><b>Pular:</b> pressione <b>⬆</b> ou <b>ESPAÇO</b>. No ar, os monstros não tiram vida!</div></div>
+      <div class="tut-row"><div class="tut-icon">⭐</div><div class="tut-txt"><b>Estrelas</b> pelo caminho dão <b>+15 pontos</b>. Algumas estão no ar — pule para pegar!</div></div>
+      <div class="tut-row"><div class="tut-icon">❤️</div><div class="tut-txt"><b>Corações</b> restauram <b>+1 vida</b>. Estão espalhados em pontos estratégicos do vale.</div></div>
+      <div class="tut-row"><div class="tut-icon">💔</div><div class="tut-txt">Ao ser atingida, Alicia <b>pisca por 1,5 segundos</b> (invencível). Você tem <b>5 vidas</b> no total.</div></div>
+      <div class="tut-row green"><div class="tut-icon">👾🐊👹</div><div class="tut-txt"><b style="color:#16a34a">Verdes</b> — 1 hit. Valem 10–15 pts.</div></div>
+      <div class="tut-row yellow"><div class="tut-icon">🌵🦎🐸</div><div class="tut-txt"><b style="color:#a16207">Amarelos</b> — 2 hits. Valem 25–30 pts.</div></div>
+      <div class="tut-row red"><div class="tut-icon">🔥👺🦂</div><div class="tut-txt"><b style="color:#b91c1c">Vermelhos</b> — 3 hits. Valem 50–60 pts. Aparecem no fim!</div></div>
+      <div class="tut-row"><div class="tut-icon">🏰</div><div class="tut-txt"><b>Objetivo:</b> chegue ao castelo no fim do vale!</div></div>
+    </div>
+    <div class="tut-content" id="tut-en">
+      <div class="tut-row"><div class="tut-icon">👸🏻</div><div class="tut-txt"><b>Princess Alicia</b> runs automatically to the right. She stops when a monster blocks the path — defeat it to keep going!</div></div>
+      <div class="tut-row"><div class="tut-icon">☂️</div><div class="tut-txt"><b>Attack:</b> press the <b>left mouse button</b>. The magical umbrella hits nearby monsters ahead!</div></div>
+      <div class="tut-row"><div class="tut-icon">⬆️</div><div class="tut-txt"><b>Jump:</b> press <b>⬆</b> or <b>SPACE</b>. While airborne, monsters can't damage you!</div></div>
+      <div class="tut-row"><div class="tut-icon">⭐</div><div class="tut-txt"><b>Stars</b> along the path give <b>+15 points</b>. Some float high — jump to reach them!</div></div>
+      <div class="tut-row"><div class="tut-icon">❤️</div><div class="tut-txt"><b>Hearts</b> restore <b>+1 life</b>. They appear at strategic points in the valley.</div></div>
+      <div class="tut-row"><div class="tut-icon">💔</div><div class="tut-txt">When hit, Alicia <b>blinks for ~1.5 seconds</b> (invincible). You start with <b>5 lives</b>.</div></div>
+      <div class="tut-row green"><div class="tut-icon">👾🐊👹</div><div class="tut-txt"><b style="color:#16a34a">Green</b> — 1 hit. Worth 10–15 pts.</div></div>
+      <div class="tut-row yellow"><div class="tut-icon">🌵🦎🐸</div><div class="tut-txt"><b style="color:#a16207">Yellow</b> — 2 hits. Worth 25–30 pts.</div></div>
+      <div class="tut-row red"><div class="tut-icon">🔥👺🦂</div><div class="tut-txt"><b style="color:#b91c1c">Red</b> — 3 hits. Worth 50–60 pts. Appear near the end!</div></div>
+      <div class="tut-row"><div class="tut-icon">🏰</div><div class="tut-txt"><b>Goal:</b> reach the castle at the end of the valley!</div></div>
+    </div>
+    <button id="btnCloseTut">✨ Fechar / Close ✨</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════
+const W=800, H=460;
+const GROUND_Y=360;
+const P_W=52, P_H=94;
+const P_SCREEN_X=130;
+const AUTO_SPD=2.6;
+const JUMP_VY=-19.5;   // much higher jump
+const GRAVITY=0.52;    // slightly floatier
+const ATK_CD=28;
+const ATK_RANGE=155;
+const MAX_LIVES=5;
+const TOTAL_DIST=3200;
+const INVINCIBLE_FRAMES=90;
+
+const MTYPES=[
+  {id:'goblin',  e:'👾',c:'#22c55e',hp:1,pts:10,sz:24},  // reduced from 42
+  {id:'croc',    e:'🐊',c:'#16a34a',hp:1,pts:12,sz:26},  // reduced from 46
+  {id:'slime',   e:'👹',c:'#4ade80',hp:1,pts:15,sz:22},  // reduced from 40
+  {id:'cactus',  e:'🌵',c:'#eab308',hp:2,pts:25,sz:28},  // reduced from 48
+  {id:'lizard',  e:'🦎',c:'#ca8a04',hp:2,pts:28,sz:26},  // reduced from 44
+  {id:'frog',    e:'🐸',c:'#facc15',hp:2,pts:30,sz:24},  // reduced from 42
+  {id:'fire',    e:'🔥',c:'#ef4444',hp:3,pts:50,sz:30},  // reduced from 50
+  {id:'demon',   e:'👺',c:'#dc2626',hp:3,pts:55,sz:32},  // reduced from 52
+  {id:'scorpion',e:'🦂',c:'#b91c1c',hp:3,pts:60,sz:28},  // reduced from 48
+];
+
+const DECO_EMOJIS=[
+  {e:'🌸',sz:18},{e:'🌼',sz:16},{e:'🌺',sz:18},
+  {e:'🌷',sz:16},{e:'🌻',sz:20},{e:'🍄',sz:16},
+  {e:'🌿',sz:18},{e:'💐',sz:18},{e:'🦋',sz:16},
+];
+
+const ENCOUNTERS=[
+  [550,'goblin'],[850,'croc'],
+  [1050,'goblin'],[1100,'slime'],
+  [1280,'cactus'],
+  [1450,'lizard'],[1500,'slime'],
+  [1680,'cactus'],[1730,'goblin'],
+  [1900,'frog'],
+  [2050,'lizard'],[2100,'frog'],
+  [2250,'fire'],
+  [2400,'demon'],[2440,'croc'],
+  [2580,'scorpion'],
+  [2700,'demon'],[2740,'fire'],
+  [2900,'scorpion'],
+];
+
+const DECO_WX=[60,180,300,420,540,660,780,950,1100,1250,1400,1600,1800,2000,2150,2300,2500,2700,2850,3000,3100];
+const HEART_WX=[350,750,1100,1500,1900,2300,2700];
+
+// ══════════════════════════════════════════════════════
+//  CANVAS
+// ══════════════════════════════════════════════════════
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+const ecache={};
+function eimg(e,sz){
+  const k=e+'|'+sz;
+  if(ecache[k]) return ecache[k];
+  const oc=document.createElement('canvas');
+  oc.width=oc.height=sz*2;
+  const c2=oc.getContext('2d');
+  c2.font=`${Math.round(sz*1.75)}px serif`;
+  c2.textAlign='center'; c2.textBaseline='middle';
+  c2.fillText(e,sz,sz);
+  return ecache[k]=oc;
+}
+
+// ══════════════════════════════════════════════════════
+//  MUSIC — Web Audio API procedural cheerful tune
+// ══════════════════════════════════════════════════════
+let audioCtx=null, musicPlaying=false;
+
+const NOTE={C4:261.6,D4:293.7,E4:329.6,G4:392,A4:440,
+            C5:523.3,D5:587.3,E5:659.3,G5:784,A5:880,C6:1047};
+
+// Bouncy children's melody (beat = half-bar units)
+const MELODY=[
+  ['E4',0],['E4',.25],['G4',.5],['E4',.75],
+  ['D4',1],['D4',1.25],['E4',1.5],['D4',1.75],
+  ['C4',2],['E4',2.25],['G4',2.5],['C5',2.75],
+  ['A4',3],['G4',3.5],
+  ['G4',4],['G4',4.25],['A4',4.5],['G4',4.75],
+  ['E4',5],['G4',5.25],['E4',5.5],['D4',5.75],
+  ['C4',6],['D4',6.25],['E4',6.5],['G4',6.75],
+  ['C4',7],
+];
+const BASS=[
+  ['C4',0],['C4',.5],['G4',1],['G4',1.5],
+  ['A4',2],['A4',2.5],['E4',3],['E4',3.5],
+  ['C4',4],['C4',4.5],['G4',5],['G4',5.5],
+  ['A4',6],['A4',6.5],['C4',7],['C4',7.5],
+];
+
+const BEAT_SEC=60/138; // 138 BPM
+const LOOP_DUR=8*BEAT_SEC*2;
+
+function playNote(freq,t,dur,vol,type='sine'){
+  if(!audioCtx||!freq) return;
+  const osc=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  osc.type=type; osc.frequency.value=freq;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(t); osc.stop(t+dur+0.05);
+}
+
+function scheduleLoop(startTime){
+  if(!audioCtx) return;
+  const B=BEAT_SEC*2;
+  // Melody (square = fun retro)
+  MELODY.forEach(([n,b])=>playNote(NOTE[n],startTime+b*B,B*0.42,0.07,'square'));
+  // Bass (triangle, octave down)
+  BASS.forEach(([n,b])=>playNote(NOTE[n]*0.5,startTime+b*B,B*0.45,0.09,'triangle'));
+  // Xylophone accents
+  const XYL=['E5','G5','A5','C6'];
+  [1,3,5,7].forEach((b,i)=>playNote(NOTE[XYL[i]],startTime+b*B,B*0.18,0.05,'triangle'));
+  // Kick on strong beats
+  [0,2,4,6].forEach(b=>{
+    if(!audioCtx) return;
+    const t=startTime+b*B;
+    const osc=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    osc.frequency.setValueAtTime(160,t);
+    osc.frequency.exponentialRampToValueAtTime(40,t+0.1);
+    g.gain.setValueAtTime(0.22,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t+0.18);
+  });
+  // Hi-hat
+  for(let i=0;i<16;i++){
+    if(!audioCtx) return;
+    const t=startTime+i*(LOOP_DUR/16);
+    const buf=audioCtx.createBuffer(1,Math.floor(audioCtx.sampleRate*.035),audioCtx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let j=0;j<d.length;j++) d[j]=(Math.random()*2-1)*Math.exp(-j/(d.length*.25));
+    const src=audioCtx.createBufferSource();
+    const f=audioCtx.createBiquadFilter();
+    const g=audioCtx.createGain();
+    f.type='highpass'; f.frequency.value=7000;
+    src.buffer=buf; src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+    g.gain.value=i%4===0?0.055:0.025;
+    src.start(t);
+  }
+}
+
+function startMusic(){
+  if(musicPlaying) return;
+  try{
+    audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    musicPlaying=true;
+    let next=audioCtx.currentTime+0.08;
+    function loop(){
+      if(!musicPlaying) return;
+      scheduleLoop(next);
+      const delay=(next-audioCtx.currentTime+(LOOP_DUR*.85))*1000;
+      next+=LOOP_DUR;
+      setTimeout(loop,delay);
+    }
+    loop();
+  }catch(e){console.warn('Audio unavailable',e);}
+}
+
+function stopMusic(){
+  musicPlaying=false;
+  try{ if(audioCtx){audioCtx.close();audioCtx=null;} }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let S={}, keys={}, raf=null;
+
+function mkState(){
+  // Stars scattered along the path
+  const stars=[];
+  for(let wx=200; wx<TOTAL_DIST-100; wx+=110+Math.floor(Math.random()*60)){
+    const high=Math.random()<0.35;
+    stars.push({
+      wx, kind:'star', collected:false,
+      wy: high ? GROUND_Y-P_H-60 : GROUND_Y-P_H+5,
+      bobOff: Math.random()*Math.PI*2,
+    });
+  }
+  // Hearts at milestones
+  HEART_WX.forEach(wx=>{
+    stars.push({wx, kind:'heart', collected:false, wy:GROUND_Y-P_H-15, bobOff:Math.random()*Math.PI*2});
+  });
+
+  return {
+    running:false,
+    score:0,
+    lives:MAX_LIVES,
+    dist:0,
+    finished:false,
+    // princess
+    py:0, pVy:0, onGround:true,
+    pAtk:0, atkCool:0,
+    walkFrame:0,
+    shake:0,
+    invincible:0,
+    // effects
+    bursts:[], floats:[], particles:[],
+    alertMsg:'', alertTimer:0,
+    // world
+    pickups: stars,
+    monsters: ENCOUNTERS.map(([wx,id],i)=>{
+      const t=MTYPES.find(m=>m.id===id);
+      return {i, type:t, hp:t.hp, alive:true, hitFlash:0,
+              patrolDir:1, patrolTimer:0, patrolOff:0,
+              wx, wy:GROUND_Y-t.sz*2, screenX:0};
+    }),
+    decos: DECO_WX.map((wx,i)=>({
+      wx, e:DECO_EMOJIS[i%DECO_EMOJIS.length].e,
+      sz:DECO_EMOJIS[i%DECO_EMOJIS.length].sz,
+      bobOff:Math.random()*Math.PI*2,
+    })),
+    clouds: Array.from({length:6},(_,i)=>({
+      wx:i*170+40, y:18+(i%3)*20, w:85+i*16, spd:.1+i*.04,
+    })),
+  };
+}
+
+// ══════════════════════════════════════════════════════
+//  HUD
+// ══════════════════════════════════════════════════════
+function updateHUD(){
+  document.getElementById('hScore').textContent=S.score;
+  document.getElementById('hDist').textContent=Math.floor(S.dist/10);
+  document.getElementById('hLives').textContent='❤️'.repeat(Math.max(0,S.lives));
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAW — BG
+// ══════════════════════════════════════════════════════
+function drawBg(){
+  // Sky
+  const sky=ctx.createLinearGradient(0,0,0,GROUND_Y);
+  sky.addColorStop(0,'#6ab4d8'); sky.addColorStop(1,'#b8e0f7');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+  // Sun
+  const sg=ctx.createRadialGradient(690,52,3,690,52,36);
+  sg.addColorStop(0,'#FFF9A0'); sg.addColorStop(.5,'#FFD700'); sg.addColorStop(1,'rgba(255,215,0,0)');
+  ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(690,52,36,0,Math.PI*2); ctx.fill();
+
+  // Clouds
+  S.clouds.forEach(cl=>{
+    const sx=cl.wx-S.dist*.32+P_SCREEN_X;
+    if(sx>W+150||sx+cl.w<-20) return;
+    ctx.save(); ctx.globalAlpha=.86; ctx.fillStyle='white';
+    ctx.beginPath();
+    ctx.ellipse(sx+cl.w/2,cl.y+15,cl.w/2,15,0,0,Math.PI*2);
+    ctx.ellipse(sx+cl.w*.28,cl.y+20,cl.w*.27,12,0,0,Math.PI*2);
+    ctx.ellipse(sx+cl.w*.72,cl.y+20,cl.w*.24,11,0,0,Math.PI*2);
+    ctx.fill(); ctx.restore();
+    cl.wx-=cl.spd;
+    if(cl.wx+cl.w<S.dist-120) cl.wx=S.dist+W+60;
+  });
+
+  // Mountains parallax
+  const mOff=-(S.dist*.45)%(W*1.8);
+  const mData=[[0,200,GROUND_Y-115,400,'#7ab87a'],[130,330,GROUND_Y-148,530,'#5a9a5a'],
+    [310,520,GROUND_Y-122,730,'#6aaa6a'],[500,700,GROUND_Y-138,900,'#5a9a5a'],[680,890,GROUND_Y-118,1100,'#7ab87a']];
+  [-1,0,1].forEach(tile=>{
+    const ox=mOff+tile*(W*1.8);
+    mData.forEach(([x1,x2,py2,x3,c])=>{
+      ctx.beginPath(); ctx.moveTo(x1+ox,GROUND_Y+2); ctx.lineTo(x2+ox,py2); ctx.lineTo(x3+ox,GROUND_Y+2);
+      ctx.closePath(); ctx.fillStyle=c; ctx.globalAlpha=.7; ctx.fill(); ctx.globalAlpha=1;
+    });
+  });
+
+  // Ground
+  const vg=ctx.createLinearGradient(0,GROUND_Y,0,H);
+  vg.addColorStop(0,'#6dbf6d'); vg.addColorStop(.4,'#4a9b4a'); vg.addColorStop(1,'#2d6b2d');
+  ctx.fillStyle=vg; ctx.fillRect(0,GROUND_Y,W,H-GROUND_Y);
+  ctx.fillStyle='#7ccf7c'; ctx.fillRect(0,GROUND_Y,W,9);
+  ctx.save(); ctx.globalAlpha=.18; ctx.fillStyle='#a07840'; ctx.fillRect(0,GROUND_Y+14,W,20); ctx.restore();
+
+  // Decorations
+  S.decos.forEach(d=>{
+    const sx=d.wx-S.dist+P_SCREEN_X;
+    if(sx<-30||sx>W+30) return;
+    const bob=Math.sin(Date.now()*.002+d.bobOff)*2.5;
+    ctx.save(); ctx.translate(sx,GROUND_Y+1+bob);
+    ctx.drawImage(eimg(d.e,d.sz),-d.sz,-d.sz,d.sz*2,d.sz*2);
+    ctx.restore();
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAW — PICKUPS
+// ══════════════════════════════════════════════════════
+function drawPickups(){
+  const t=Date.now()*.003;
+  S.pickups.forEach(pk=>{
+    if(pk.collected) return;
+    const sx=pk.wx-S.dist+P_SCREEN_X;
+    if(sx<-30||sx>W+30) return;
+    const bob=Math.sin(t*2+pk.bobOff)*5;
+    const sy=pk.wy+bob;
+    ctx.save(); ctx.translate(sx,sy);
+    if(pk.kind==='star'){
+      const g=ctx.createRadialGradient(0,0,0,0,0,20);
+      g.addColorStop(0,'rgba(255,230,50,.55)'); g.addColorStop(1,'rgba(255,215,0,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fill();
+      const p=1+Math.sin(t*3+pk.bobOff)*.08;
+      ctx.scale(p,p); ctx.font='22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('⭐',0,0);
+    } else {
+      const g=ctx.createRadialGradient(0,0,0,0,0,22);
+      g.addColorStop(0,'rgba(255,80,120,.6)'); g.addColorStop(1,'rgba(255,20,100,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,22,0,Math.PI*2); ctx.fill();
+      const p=1+Math.sin(t*2.5+pk.bobOff)*.1;
+      ctx.scale(p,p); ctx.font='24px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('❤️',0,0);
+    }
+    ctx.restore();
+    // Guide line
+    if(sx>P_SCREEN_X+40&&sx<W){
+      ctx.save(); ctx.globalAlpha=.15; ctx.strokeStyle='white';
+      ctx.lineWidth=1; ctx.setLineDash([4,6]);
+      ctx.beginPath(); ctx.moveTo(sx,sy+14); ctx.lineTo(sx,GROUND_Y);
+      ctx.stroke(); ctx.restore();
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAW — PRINCESS
+// ══════════════════════════════════════════════════════
+function drawPrincess(){
+  // Blink when invincible
+  if(S.invincible>0 && Math.floor(S.invincible/5)%2===0) return;
+
+  const x=P_SCREEN_X, y=GROUND_Y-P_H+S.py;
+  const atk=S.pAtk;
+  ctx.save();
+  ctx.translate(x+P_W/2, y);
+  if(S.invincible>0) ctx.globalAlpha=0.6;
+
+  // Umbrella
+  const swing=atk>0?Math.sin((1-atk/ATK_CD)*Math.PI)*30:0;
+  ctx.save(); ctx.translate(16+swing,-8);
+  if(atk>0){
+    const al=atk/ATK_CD;
+    const ug=ctx.createRadialGradient(0,0,0,0,0,52);
+    ug.addColorStop(0,`rgba(255,255,255,${al*.85})`);
+    ug.addColorStop(.5,`rgba(255,105,180,${al*.5})`);
+    ug.addColorStop(1,'rgba(255,105,180,0)');
+    ctx.fillStyle=ug; ctx.beginPath(); ctx.arc(0,0,52,0,Math.PI*2); ctx.fill();
+  }
+  ctx.beginPath(); ctx.moveTo(-22,14); ctx.quadraticCurveTo(-11,0,0,-7); ctx.quadraticCurveTo(11,0,22,14);
+  ctx.closePath(); ctx.fillStyle='#FF69B4'; ctx.fill();
+  ctx.strokeStyle='#FF1493'; ctx.lineWidth=1.8; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-22,14); ctx.quadraticCurveTo(-11,0,0,-7);
+  ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.strokeStyle='rgba(255,20,147,.5)'; ctx.lineWidth=1;
+  [[-11,8],[0,14],[11,8]].forEach(([rx,ry])=>{ctx.beginPath();ctx.moveTo(0,-7);ctx.lineTo(rx,ry);ctx.stroke();});
+  ctx.beginPath(); ctx.arc(0,-7,3.5,0,Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+  ctx.strokeStyle='#FF69B4'; ctx.lineWidth=1; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,14); ctx.quadraticCurveTo(0,24,-5,28);
+  ctx.strokeStyle='#c0387a'; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.stroke();
+  ctx.restore();
+
+  // Body
+  const bob=S.onGround?Math.sin(S.walkFrame*.45)*2:0;
+  ctx.save(); ctx.translate(0,bob);
+  // Crown
+  ctx.beginPath(); ctx.moveTo(-14,28); ctx.lineTo(-10,18); ctx.lineTo(-4,24);
+  ctx.lineTo(0,16); ctx.lineTo(4,24); ctx.lineTo(10,18); ctx.lineTo(14,28);
+  ctx.fillStyle='#FFD700'; ctx.fill(); ctx.strokeStyle='#FFA500'; ctx.lineWidth=1; ctx.stroke();
+  [[0,18,'#FF69B4'],[-9,22,'#FF4499'],[9,22,'#FF4499']].forEach(([cx,cy,cc])=>{
+    ctx.beginPath(); ctx.arc(cx,cy,2.2,0,Math.PI*2); ctx.fillStyle=cc; ctx.fill();
+  });
+  // Hair
+  ctx.beginPath(); ctx.moveTo(-13,30); ctx.quadraticCurveTo(-13,16,-1,13); ctx.quadraticCurveTo(12,11,13,29);
+  ctx.fillStyle='#8B4513'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-13,30); ctx.quadraticCurveTo(-17,42,-15,54);
+  ctx.strokeStyle='#8B4513'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(13,30); ctx.quadraticCurveTo(16,40,14,50);
+  ctx.strokeStyle='#8B4513'; ctx.lineWidth=4; ctx.stroke();
+  // Head
+  ctx.beginPath(); ctx.ellipse(0,36,11,12,0,0,Math.PI*2); ctx.fillStyle='#FFDAB9'; ctx.fill();
+  // Eyes
+  [[-5.5,35],[5.5,35]].forEach(([ex,ey])=>{
+    ctx.beginPath(); ctx.ellipse(ex,ey,2.3,2.8,0,0,Math.PI*2); ctx.fillStyle='#3d1a08'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ex+.8,ey-.9,.9,0,Math.PI*2); ctx.fillStyle='white'; ctx.fill();
+  });
+  [[-9.5,40],[9.5,40]].forEach(([bx,by])=>{
+    ctx.beginPath(); ctx.ellipse(bx,by,4,2.2,0,0,Math.PI*2); ctx.fillStyle='rgba(255,150,180,.65)'; ctx.fill();
+  });
+  ctx.beginPath(); ctx.moveTo(-5,42); ctx.quadraticCurveTo(0,47,5,42);
+  ctx.strokeStyle='#b05030'; ctx.lineWidth=1.5; ctx.lineCap='round'; ctx.stroke();
+  // Dress
+  ctx.beginPath(); ctx.moveTo(-12,47); ctx.quadraticCurveTo(0,53,12,47);
+  ctx.lineTo(20,84); ctx.quadraticCurveTo(0,93,-20,84); ctx.closePath();
+  ctx.fillStyle='#FF69B4'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-5,62); ctx.quadraticCurveTo(0,67,5,62);
+  ctx.lineTo(20,84); ctx.quadraticCurveTo(0,93,-20,84); ctx.closePath();
+  ctx.fillStyle='rgba(255,20,147,.38)'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-20,84); ctx.quadraticCurveTo(0,93,20,84);
+  ctx.strokeStyle='white'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.font='10px serif'; ctx.fillText('✦',-7,66); ctx.fillText('✦',4,76);
+  // Arms
+  const arm=S.onGround?Math.sin(S.walkFrame*.45)*10:0;
+  ctx.beginPath(); ctx.moveTo(-12,52); ctx.quadraticCurveTo(-18+arm*.5,62,-14+arm,70);
+  ctx.strokeStyle='#FFDAB9'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12,52); ctx.quadraticCurveTo(16-arm*.5,62,14-arm,70);
+  ctx.strokeStyle='#FFDAB9'; ctx.lineWidth=5; ctx.stroke();
+  // Legs
+  const leg=S.onGround?Math.sin(S.walkFrame*.45)*9:0;
+  [[-6+leg,84],[4-leg,84]].forEach(([lx,ly])=>{
+    ctx.beginPath(); ctx.roundRect(lx,ly,8,14,4); ctx.fillStyle='#FFDAB9'; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(lx+4,ly+15,7.5,4.5,0,0,Math.PI*2); ctx.fillStyle='#FF69B4'; ctx.fill();
+  });
+  ctx.restore();
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAW — MONSTER
+// ══════════════════════════════════════════════════════
+function drawMonster(m){
+  if(!m.alive) return;
+  const sx=m.screenX, sz=m.type.sz;
+  if(sx<-80||sx>W+80) return;
+  ctx.save(); ctx.translate(sx,m.wy+sz);
+  if(m.hitFlash>0) ctx.filter=`brightness(${3+m.hitFlash*1.5}) saturate(0)`;
+  ctx.save(); ctx.globalAlpha=.2; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(0,sz+2,sz*.7,5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+  // warning
+  if(sx>P_SCREEN_X+60&&sx<P_SCREEN_X+300){
+    const p=.85+Math.sin(Date.now()*.012)*.15;
+    ctx.save(); ctx.font=`bold ${16*p}px serif`; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillStyle='#FF3300'; ctx.shadowColor='#FF3300'; ctx.shadowBlur=5;
+    ctx.fillText('❗',0,-sz-2); ctx.restore();
+  }
+  ctx.scale(-1,1); ctx.drawImage(eimg(m.type.e,sz),-sz,-sz,sz*2,sz*2); ctx.scale(-1,1);
+  ctx.filter='none';
+  if(m.type.hp>1){
+    const bw=sz*1.4,bh=6,bx=-bw/2,by=sz+8;
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.roundRect(bx-1,by-1,bw+2,bh+2,3); ctx.fill();
+    const pct=m.hp/m.type.hp;
+    ctx.fillStyle=pct>.55?'#22c55e':pct>.25?'#eab308':'#ef4444';
+    ctx.roundRect(bx,by,bw*pct,bh,3); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAW — EFFECTS
+// ══════════════════════════════════════════════════════
+function drawBursts(){
+  S.bursts.forEach(b=>{
+    const p=b.t/20; ctx.save(); ctx.globalAlpha=p;
+    const rg=ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,55*p+8);
+    rg.addColorStop(0,'rgba(255,255,255,.95)'); rg.addColorStop(.4,'rgba(255,105,180,.7)'); rg.addColorStop(1,'rgba(255,105,180,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(b.x,b.y,55*p+8,0,Math.PI*2); ctx.fill();
+    ctx.font=`${22*p}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('⭐',b.x,b.y); ctx.restore(); b.t--;
+  });
+  S.bursts=S.bursts.filter(b=>b.t>0);
+}
+
+function drawFloats(){
+  S.floats.forEach(f=>{
+    const p=f.t/55; ctx.save(); ctx.globalAlpha=p;
+    ctx.font="bold 20px 'Fredoka One',cursive"; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='white'; ctx.shadowColor='#FF0066'; ctx.shadowBlur=8;
+    ctx.fillText(f.txt,f.x,f.y-(55-f.t)*1.4); ctx.restore(); f.t--;
+  });
+  S.floats=S.floats.filter(f=>f.t>0);
+}
+
+function drawParticles(){
+  S.particles.forEach(p=>{
+    ctx.save(); ctx.globalAlpha=p.life/p.maxLife;
+    ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); ctx.restore();
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.2; p.life--;
+  });
+  S.particles=S.particles.filter(p=>p.life>0);
+}
+
+function drawJumpShadow(){
+  if(S.onGround) return;
+  const sc=Math.max(0,1-Math.abs(S.py)/160);
+  ctx.save(); ctx.globalAlpha=.15*sc; ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(P_SCREEN_X+P_W/2,GROUND_Y+5,22*sc,5*sc,0,0,Math.PI*2);
+  ctx.fill(); ctx.restore();
+}
+
+function drawProgress(){
+  const pct=Math.min(1,S.dist/TOTAL_DIST);
+  const bw=W-40,bh=8,bx=20,by=H-15;
+  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.roundRect(bx,by,bw,bh,4); ctx.fill();
+  const pg=ctx.createLinearGradient(bx,0,bx+bw,0);
+  pg.addColorStop(0,'#FF69B4'); pg.addColorStop(1,'#FFD700');
+  ctx.fillStyle=pg; ctx.roundRect(bx,by,bw*pct,bh,4); ctx.fill();
+  ctx.font='14px serif'; ctx.fillText('🏰',bx+bw-4,by+12); ctx.fillText('👸',bx+bw*pct-6,by+12);
+}
+
+function drawAlert(){
+  if(S.alertTimer<=0) return;
+  ctx.save(); ctx.globalAlpha=Math.min(1,S.alertTimer/15);
+  ctx.font="bold 36px 'Fredoka One',cursive"; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='white'; ctx.shadowColor='#c0387a'; ctx.shadowBlur=14;
+  ctx.fillText(S.alertMsg,W/2,H/2-20); ctx.restore();
+  S.alertTimer--;
+}
+
+// ══════════════════════════════════════════════════════
+//  ATTACK
+// ══════════════════════════════════════════════════════
+function doAttack(){
+  if(!S.running||S.atkCool>0) return;
+  S.atkCool=ATK_CD; S.pAtk=ATK_CD;
+  S.bursts.push({x:P_SCREEN_X+P_W+52, y:GROUND_Y-P_H/2+S.py-12, t:20});
+  S.monsters.forEach(m=>{
+    if(!m.alive) return;
+    const dist=m.screenX-(P_SCREEN_X+P_W/2);
+    if(dist>0&&dist<ATK_RANGE){
+      m.hp--; m.hitFlash=7;
+      if(m.hp<=0) killMonster(m);
+      else S.floats.push({x:m.screenX,y:m.wy-10,txt:'-1',t:55});
+    }
+  });
+}
+
+function killMonster(m){
+  m.alive=false;
+  S.score+=m.type.pts;
+  S.floats.push({x:m.screenX,y:m.wy-10,txt:`💥 +${m.type.pts}`,t:55});
+  for(let i=0;i<12;i++){
+    const a=(Math.PI*2/12)*i;
+    S.particles.push({x:m.screenX,y:m.wy+m.type.sz*.5,
+      vx:Math.cos(a)*3.2*(.4+Math.random()),vy:Math.sin(a)*3*(.4+Math.random())-2.5,
+      r:3+Math.random()*5,c:m.type.c,life:28+Math.random()*18|0,maxLife:46});
+  }
+  updateHUD();
+}
+
+// ══════════════════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════════════════
+function loop(){
+  if(!S.running) return;
+
+  // Check blocker (alive monster just ahead of princess)
+  let blocked=false;
+  S.monsters.forEach(m=>{
+    if(!m.alive) return;
+    const sx=m.wx-S.dist+P_SCREEN_X;
+    if(sx>P_SCREEN_X+P_W-4&&sx<P_SCREEN_X+P_W+32) blocked=true;
+  });
+
+  // Auto-scroll
+  if(!blocked){ S.dist+=AUTO_SPD; S.walkFrame++; }
+
+  // Jump
+  if((keys['ArrowUp']||keys[' ']||keys['mjump'])&&S.onGround){
+    S.pVy=JUMP_VY; S.onGround=false;
+  }
+
+  // Gravity
+  if(!S.onGround){
+    S.pVy+=GRAVITY; S.py+=S.pVy;
+    if(S.py>=0){S.py=0;S.pVy=0;S.onGround=true;}
+  }
+
+  if(S.atkCool>0) S.atkCool--;
+  if(S.pAtk>0) S.pAtk--;
+  if(S.shake>0) S.shake--;
+  if(S.invincible>0) S.invincible--;
+
+  // Princess bounding box
+  const pL=P_SCREEN_X+8,  pR=P_SCREEN_X+P_W-8;
+  const pT=GROUND_Y-P_H+S.py+18, pB=GROUND_Y+S.py;
+  const pCx=P_SCREEN_X+P_W/2, pCy=GROUND_Y-P_H/2+S.py;
+
+  // Pickup collection
+  S.pickups.forEach(pk=>{
+    if(pk.collected) return;
+    const sx=pk.wx-S.dist+P_SCREEN_X;
+    const sy=pk.wy;
+    if(Math.abs(sx-pCx)<28&&Math.abs(sy-pCy)<30){
+      pk.collected=true;
+      if(pk.kind==='star'){
+        S.score+=15;
+        S.floats.push({x:sx,y:sy-10,txt:'⭐ +15',t:55});
+      } else {
+        S.lives=Math.min(S.lives+1,9);
+        S.floats.push({x:sx,y:sy-10,txt:'❤️ +Vida!',t:65});
+        for(let i=0;i<8;i++){
+          const a=(Math.PI*2/8)*i;
+          S.particles.push({x:sx,y:sy,vx:Math.cos(a)*2.5,vy:Math.sin(a)*2.5-1.5,r:4,c:'#FF69B4',life:30,maxLife:30});
+        }
+      }
+      updateHUD();
+    }
+  });
+
+  // Monster update + collision
+  S.monsters.forEach(m=>{
+    m.screenX=m.wx-S.dist+P_SCREEN_X;
+    if(!m.alive) return;
+    if(m.hitFlash>0) m.hitFlash--;
+    m.patrolTimer++;
+    if(m.patrolTimer>55){m.patrolDir*=-1;m.patrolTimer=0;}
+    m.patrolOff+=m.patrolDir*.5;
+    m.patrolOff=Math.max(-14,Math.min(14,m.patrolOff));
+    m.screenX+=m.patrolOff;
+
+    // Real hitbox collision
+    if(S.invincible===0){
+      const mL=m.screenX-m.type.sz*.55, mR=m.screenX+m.type.sz*.55;
+      const mT=m.wy+4,                  mB=m.wy+m.type.sz*2-4;
+      if(pR>mL&&pL<mR&&pB>mT&&pT<mB){
+        S.lives--;
+        S.shake=20;
+        S.invincible=INVINCIBLE_FRAMES;
+        S.floats.push({x:pCx,y:GROUND_Y-P_H-20,txt:'💔 -1 Vida!',t:70});
+        updateHUD();
+        if(S.lives<=0){ endGame(false); return; }
+      }
+    }
+
+    // Remove if way past princess
+    if(m.screenX<P_SCREEN_X-80) m.alive=false;
+  });
+
+  // Win check
+  if(S.dist>=TOTAL_DIST&&!S.finished){
+    S.finished=true;
+    setTimeout(()=>endGame(true),500);
+  }
+
+  // Render
+  ctx.save();
+  if(S.shake>0){ const sv=S.shake%4<2?5:-5; ctx.translate(sv*(S.shake/20),0); }
+  drawBg();
+  drawParticles();
+  drawPickups();
+  S.monsters.forEach(drawMonster);
+  drawJumpShadow();
+  drawPrincess();
+  drawBursts();
+  drawFloats();
+  drawProgress();
+  drawAlert();
+  ctx.restore();
+  updateHUD();
+
+  raf=requestAnimationFrame(loop);
+}
+
+// ══════════════════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════════════════
+function showScreen(id){
+  ['startScreen','gameoverScreen','winScreen'].forEach(s=>{
+    document.getElementById(s).classList.toggle('active',s===id);
+  });
+}
+
+function startGame(){
+  if(raf) cancelAnimationFrame(raf);
+  S=mkState();
+  S.running=true;
+  S.alertMsg='🌸 Boa Aventura, Alicia!';
+  S.alertTimer=85;
+  updateHUD();
+  showScreen('none');
+  startMusic();
+  raf=requestAnimationFrame(loop);
+}
+
+function endGame(win){
+  S.running=false;
+  if(raf) cancelAnimationFrame(raf);
+  if(win){
+    document.getElementById('winText').textContent=
+      `Você chegou ao castelo! 🏰 Pontuação: ${S.score} pts — ${Math.floor(S.dist/10)}m! 🌟`;
+    showScreen('winScreen');
+  } else {
+    document.getElementById('goText').textContent=
+      `Pontuação: ${S.score} pts — ${Math.floor(S.dist/10)}m. Tente novamente!`;
+    showScreen('gameoverScreen');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════════════════
+window.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+});
+window.addEventListener('keyup',e=>{ keys[e.key]=false; });
+canvas.addEventListener('mousedown',e=>{ if(e.button===0&&S.running) doAttack(); });
+canvas.addEventListener('touchend',e=>{ e.preventDefault(); if(S.running) doAttack(); });
+document.getElementById('btnJump').addEventListener('pointerdown',e=>{ e.preventDefault(); keys['mjump']=true; });
+document.getElementById('btnJump').addEventListener('pointerup',  e=>{ e.preventDefault(); keys['mjump']=false; });
+document.getElementById('btnAtk').addEventListener('pointerdown', e=>{ e.preventDefault(); doAttack(); });
+document.getElementById('btnStart').addEventListener('click',    ()=>startGame());
+document.getElementById('btnRestart').addEventListener('click',  ()=>startGame());
+document.getElementById('btnRestart2').addEventListener('click', ()=>startGame());
+
+// Mute toggle
+let muted=false;
+document.getElementById('btnMute').addEventListener('click',()=>{
+  muted=!muted;
+  document.getElementById('btnMute').textContent=muted?'🔇':'🔊';
+  if(muted) stopMusic();
+  else if(S.running) startMusic();
+});
+
+// ══════════════════════════════════════════════════════
+//  TUTORIAL
+// ══════════════════════════════════════════════════════
+function switchLang(lang){
+  document.querySelectorAll('.tut-content').forEach(el=>el.classList.remove('show'));
+  document.querySelectorAll('.tut-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tut-'+lang).classList.add('show');
+  document.querySelectorAll('.tut-tab')[lang==='pt'?0:1].classList.add('active');
+}
+document.getElementById('btnTutPT').addEventListener('click',()=>{
+  document.getElementById('tutModal').classList.add('open'); switchLang('pt');
+});
+document.getElementById('btnTutEN').addEventListener('click',()=>{
+  document.getElementById('tutModal').classList.add('open'); switchLang('en');
+});
+document.getElementById('btnCloseTut').addEventListener('click',()=>{
+  document.getElementById('tutModal').classList.remove('open');
+});
+document.getElementById('tutModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('tutModal'))
+    document.getElementById('tutModal').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════════════
+//  TITLE ANIMATION
+// ══════════════════════════════════════════════════════
+S=mkState();
+(function titleLoop(){
+  if(S.running) return;
+  S.clouds.forEach(cl=>{ cl.wx-=cl.spd*.5; if(cl.wx+cl.w<-100) cl.wx=W+80; });
+  drawBg();
+  const t=Date.now()*.001;
+  S.py=Math.sin(t*1.5)*10; S.pAtk=0; S.walkFrame=t*55|0; S.onGround=false; S.invincible=0;
+  drawPrincess();
+  S.py=0; S.onGround=true;
+  requestAnimationFrame(titleLoop);
+})();
+</script>
+</body>
+</html>
